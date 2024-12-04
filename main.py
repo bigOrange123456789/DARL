@@ -16,20 +16,27 @@ def save_image(image_numpy, image_path):
     image_pil = Image.fromarray(image_numpy.astype('uint8'))
     image_pil.save(image_path)
 
+# lzc: python3 main.py -p train -c config/train.json
 if __name__ == "__main__":
+    print('(lzc) torch.cuda.is_available()--main',torch.cuda.is_available())
     parser = argparse.ArgumentParser()
+    # 获取参数
     parser.add_argument('-c', '--config', type=str, default='config/test.json', help='JSON file for configuration')
+    # 设定json文件路径
     parser.add_argument('-p', '--phase', type=str, choices=['train', 'test'],
                         help='Run either train(training) or test(inference)', default='train')
+    # 选择训练模式
     parser.add_argument('-gpu', '--gpu_ids', type=str, default=None)
     parser.add_argument('-debug', '-d', action='store_true')
 
     # parse configs
     args = parser.parse_args()
+    # 解析参数
     opt = Logger.parse(args)
-    # Convert to NoneDict, which return None for missing key.
+    # opt： OrderedDict([('name', 'DARM_train'), ('phase', 'train'), ('gpu_ids', [1]), ...
+    # Convert to NoneDict, which return None for missing key. # 转换为NoneDict，如果缺少密钥，则返回None。
     opt = Logger.dict_to_nonedict(opt)
-    visualizer = Visualizer(opt)
+    visualizer = Visualizer(opt) # 不知道这个Visualizer的作用
 
     # logging
     torch.backends.cudnn.enabled = True

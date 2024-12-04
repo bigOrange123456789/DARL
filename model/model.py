@@ -14,13 +14,15 @@ class DARM(BaseModel):
     def __init__(self, opt):
         super(DARM, self).__init__(opt)
         # define network and load pretrained models
-        self.netG = self.set_device(networks.define_G(opt))
-        self.netD_s = self.set_device(networks.define_D(opt))
-        self.netD_a = self.set_device(networks.define_D(opt))
+        self.netG = self.set_device(networks.define_G(opt)) #生成器
+        print('lzc--networks.define_G(opt):',networks.define_G(opt))
+        self.netD_s = self.set_device(networks.define_D(opt)) #分割图判别器 segmentation
+        print('lzc--networks.define_D(opt):',networks.define_D(opt))
+        self.netD_a = self.set_device(networks.define_D(opt)) #造影图判别器 angiography
         self.schedule_phase = None
-        self.centered = opt['datasets']['train']['centered']
+        self.centered = opt['datasets']['train']['centered'] # true 不知道这里的作用
 
-        # set loss and load resume state
+        # set loss and load resume state 设置损失和负载恢复状态
         self.set_loss()
         self.set_new_noise_schedule(opt['model']['beta_schedule']['train'], schedule_phase='train')
         self.load_network()
