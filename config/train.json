@@ -15,8 +15,8 @@
     "datasets": {
         "train": {
             "name": "XCAD",
-            "dataroot": "../DataSet2/XCAD/",
-            "dataroot-Old": "./data/Dataset_XCAD/",
+            "dataroot-old2": "../DataSet2/XCAD/",
+            "dataroot": "./data/Dataset_XCAD/",
             "batch_size": 1,
             "centered": true,
             "num_workers": 8,
@@ -24,8 +24,8 @@
         },
         "val": {
             "name": "XCAD",
-            "dataroot": "../DataSet2/XCAD/",
-            "dataroot-Old": "./data/Dataset_XCAD/",
+            "dataroot-old2": "../DataSet2/XCAD/",
+            "dataroot": "./data/Dataset_XCAD/",
             "data_len": 3
         }
     },

@@ -76,7 +76,7 @@ def noise_like(shape, device, repeat=False):
 class GaussianDiffusion(nn.Module):
     def __init__(
         self,
-        denoise_fn, segment_fn,
+        denoise_fn, segment_fn,#这两个函数分别表示 UNet、SPADEGenerator
         image_size,
         channels=3,
         loss_type='l1',
@@ -239,7 +239,7 @@ class GaussianDiffusion(nn.Module):
     def segment(self, x_in):
         return self.p_sample_segment(x_in)
 
-    def q_sample(self, x_start, t, noise=None):
+    def q_sample(self, x_start, t, noise=None): #貌似q为逆向去噪过程
         noise = default(noise, lambda: torch.randn_like(x_start))
 
         # fix gama
@@ -249,38 +249,85 @@ class GaussianDiffusion(nn.Module):
                     t, x_start.shape) * noise
         )
 
-    def p_losses(self, x_in, noise=None):
-        a_start = x_in['A']
-        device = a_start.device
+    def p_losses(self, x_in, noise=None):#好像是用来计算某个损失 #貌似p为正向加噪过程
+        '''
+            x:{
+                A <class 'Tensor'> Size([1, 1, 256, 256])
+                B <class 'Tensor'> Size([1, 1, 256, 256])
+                F <class 'Tensor'> Size([1, 1, 256, 256])
+                P <class 'list'> ['./data/Dataset_XCAD/train\\trainC\\003_PPA_-29_PSA_29_2.png']
+            }
+        '''
+        a_start = x_in['A'] # [1, 1, 256, 256] #造影图
+        device = a_start.device # cuda:0
         [b, c, h, w] = a_start.shape
-        noise = default(noise, lambda: torch.randn_like(a_start))
+        noise = default(noise, lambda: torch.randn_like(a_start))# noise: None->[1, 1, 256, 256]
 
-        #### A path ####
-        t_a = torch.randint(0, 200, (b,), device=device).long()
-        A_noisy = self.q_sample(x_start=a_start, t=t_a, noise=noise)
-        A_latent = self.denoise_fn(A_noisy, t_a)
-        segm_V = self.segment_fn(torch.cat([A_noisy, A_latent], dim=1))
+        #### A path #### 论文中的A分割路径
+        t_a = torch.randint(0, 200, (b,), device=device).long() #生成b个0~200之间的随机整数 t_a = tensor([129]) #加噪步数
+        A_noisy = self.q_sample(x_start=a_start, t=t_a, noise=noise) #加噪后的图片   [1, 1, 256, 256] 
+        A_latent = self.denoise_fn(A_noisy, t_a) #所含的噪声   [1, 1, 256, 256]
+        segm_V = self.segment_fn(torch.cat([A_noisy, A_latent], dim=1)) #分割结果
 
-        #### B path ####
-        t_b = torch.randint(0, self.num_timesteps, (b,), device=device).long()
-        b_start = x_in['B']
-        B_noisy = self.q_sample(x_start=b_start, t=t_b, noise=noise)
-        B_latent = self.denoise_fn(B_noisy, t_b)
+        #### B path #### 论文中的B合成路径
+        t_b = torch.randint(0, self.num_timesteps, (b,), device=device).long() #加噪步数
+        b_start = x_in['B'] #背景图
+        B_noisy = self.q_sample(x_start=b_start, t=t_b, noise=noise) #加噪后的图片
+        B_latent = self.denoise_fn(B_noisy, t_b) #所含的噪声
+        # print("torch.eye(2):"                       ,torch.eye(2)      )
+        # print("x_in['F']:"                                           ,x_in['F'].shape      )
+        # print("x_in['F'][:, 0]:"                                     ,x_in['F'][:, 0].shape)
+        # print("torch.clamp_min(x_in['F'][:, 0], 0):"                 ,torch.clamp_min(x_in['F'][:, 0], 0).shape)
+        # print("torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long):",torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long).shape)
+        '''
+            x_in['F']:                                            torch.Size([1, 1, 256, 256])
+            x_in['F'][:, 0]:                                      torch.Size([1, 256, 256])
+            torch.clamp_min(x_in['F'][:, 0], 0):                  torch.Size([1, 256, 256])
+            torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long): torch.Size([1, 256, 256])
 
-        fractal = torch.eye(2)[:, torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long)].transpose(0, 1)
-        synt_A = self.segment_fn(torch.cat([B_noisy, B_latent], dim=1), fractal.to(device))
+            torch.clamp(input, min, max, out=None)
+                将input的值限制在[min, max]之间，并返回结果。
+
+            torch.eye()
+                生成对角线全1, 其余部分全0的二维数组
+            transpose()
+                求矩阵的转置
+                transpose(0, 1)应该是用于改变矩阵中元素的坐标次序，我认为这里的作用应该是只保留前两个维度
+        '''
+        # print('torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long)',torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long))
+        # fractal = torch.eye(2)[:, torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long)].transpose(0, 1)
+        fractal = torch.eye(2).to(device)[:, torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long)].transpose(0, 1) #用于确保整体几何信息的分形图
+        # 整句代码的作用是：生成一个2x2的单位矩阵，然后根据x_in['F']张量的第一列中的值（经过限制不小于0并转换为长整型）来选择单位矩阵的列，最后将得到的矩阵进行转置。这样的操作可能用于某些特定的矩阵操作或数据预处理步骤。
+        synt_A = self.segment_fn(torch.cat([B_noisy, B_latent], dim=1), fractal.to(device)) #合成的造影图
 
         #### Cycle path ####
-        f_noisy = self.q_sample(x_start=synt_A, t=t_a, noise=noise)
-        f_recon = self.denoise_fn(f_noisy, t_a)
-        recn_F = self.segment_fn(torch.cat([f_noisy, f_recon], dim=1))
+        f_noisy = self.q_sample(x_start=synt_A, t=t_a, noise=noise) #在合成图中添加噪声
+        f_recon = self.denoise_fn(f_noisy, t_a) #所含的噪声
+        recn_F = self.segment_fn(torch.cat([f_noisy, f_recon], dim=1)) #分割结果
 
-        l_dif = self.loss_func(noise, B_latent)
+        l_dif = self.loss_func(noise, B_latent) # 真实噪声 和 预测噪声 之间的差异
         l_dif = l_dif.sum() / int(b * c * h * w)
-        l_cyc = self.loss_cyc(recn_F, x_in['F'])
+        l_cyc = self.loss_cyc(recn_F, x_in['F']) #分割结果 和 分形标签 之间的差异 
 
         return [A_noisy, A_latent, B_noisy, B_latent, segm_V, synt_A, recn_F], [l_dif, l_cyc]
 
     def forward(self, x, *args, **kwargs):
+        # print('args',args)
+        # print('kwargs',kwargs)
+        # print('x[A]',type(x['A']) ,x['A'].shape)
+        # print('x[B]',type(x['B']) ,x['B'].shape)
+        # print('x[F]',type(x['F']) ,x['F'].shape)
+        # print('x[P]',type(x['P']) ,x['P'])
+        '''
+            x:{
+                A <class 'Tensor'> Size([1, 1, 256, 256])
+                B <class 'Tensor'> Size([1, 1, 256, 256])
+                F <class 'Tensor'> Size([1, 1, 256, 256])
+                P <class 'list'> ['./data/Dataset_XCAD/train\\trainC\\000_PPA_44_PSA_00_8.png']
+            }
+            args: ()
+            kwargs: {}
+        '''
+        # print(1)
         return self.p_losses(x, *args, **kwargs)
 

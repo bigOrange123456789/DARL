@@ -18,7 +18,7 @@ def save_image(image_numpy, image_path):
 
 # lzc: python3 main.py -p train -c config/train.json
 if __name__ == "__main__":
-    print('(lzc) torch.cuda.is_available()--main',torch.cuda.is_available())
+    print('(lzc-main.py) torch.cuda.is_available()--main',torch.cuda.is_available())
     parser = argparse.ArgumentParser()
     # 获取参数
     parser.add_argument('-c', '--config', type=str, default='config/test.json', help='JSON file for configuration')
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     logger = logging.getLogger('base')
     if False: #是否输出所有配置参数
         logger.info(Logger.dict2str(opt))
-    else: print('[main.py]--不输出配置参数')
+    else: print('[main.py]--控制台不输出配置参数')
     tb_logger = SummaryWriter(log_dir=opt['path']['tb_logger'])
 
     batchSize = opt['datasets']['train']['batch_size']
@@ -55,6 +55,7 @@ if __name__ == "__main__":
         if phase == 'train':
             train_set = Data.create_dataset_xcad(dataset_opt, phase)
             train_loader = Data.create_dataloader(train_set, dataset_opt, phase)
+            print('(lzc-main.py) train_loader:',train_loader)
             training_iters = int(ceil(train_set.data_len / float(batchSize)))
             val_set = Data.create_dataset_xcad(dataset_opt, 'val')
             val_loader = Data.create_dataloader(val_set, dataset_opt, 'val')
@@ -83,6 +84,7 @@ if __name__ == "__main__":
         while current_epoch < n_epoch:
             current_epoch += 1
             for istep, train_data in enumerate(train_loader):
+                # print('current_epoch,istep, train_data:',current_epoch,istep, train_data)
                 iter_start_time = time.time()
                 current_step += 1
                 diffusion.feed_data(train_data)

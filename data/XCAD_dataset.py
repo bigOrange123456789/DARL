@@ -14,9 +14,9 @@ class XCADDataset(Dataset):
 
         if split == 'train':
             # 'trainB'= Image, 'trainC'=Background, 'trainA'=fractal label
-            self.A_paths = sorted(glob.glob(os.path.join(dataroot, self.split, 'trainB', '*.png')))
-            self.B_paths = sorted(glob.glob(os.path.join(dataroot, self.split, 'trainC', '*.png')))
-            self.F_paths = sorted(glob.glob(os.path.join(dataroot, self.split, 'trainA', '*.png')))
+            self.A_paths = sorted(glob.glob(os.path.join(dataroot, self.split, 'trainB', '*.png'))) #图片
+            self.B_paths = sorted(glob.glob(os.path.join(dataroot, self.split, 'trainC', '*.png'))) #背景
+            self.F_paths = sorted(glob.glob(os.path.join(dataroot, self.split, 'trainA', '*.png'))) #分形标签 
             self.data_len = len(self.A_paths)
 
         elif split == 'val':
@@ -55,6 +55,13 @@ class XCADDataset(Dataset):
 
         if self.split == 'train':
             self._shuffle_data_index()
+            # print('(lzc-data.XCAD_dataset.py)','len(self.A_paths):',len(self.A_paths))
+            # print('(lzc-data.XCAD_dataset.py)','len(self.B_paths):',len(self.B_paths))
+            # print('(lzc-data.XCAD_dataset.py)','len(self.F_paths):',len(self.F_paths))
+            # print('(lzc-data.XCAD_dataset.py)',len(self.A_paths),len(self.B_paths),len(self.F_paths),index)
+            # import logging
+            # logger = logging.getLogger('base')
+            # logger.info('(lzc-data.XCAD_dataset.py)',index,len(self.A_paths),len(self.B_paths),len(self.F_paths))
             A_path = self.A_paths[index]
             B_path = self.B_paths[index]
             F_path = self.F_paths[index]

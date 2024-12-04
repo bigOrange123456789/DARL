@@ -95,7 +95,7 @@ def define_G(opt):
     )
     model_seg = SPADEGenerator(2, 1)
     netG = diffusion.GaussianDiffusion(
-        model_score, model_seg,
+        model_score, model_seg, #我猜这两个参数分别为 去噪函数、分割函数 #这两个函数分别表示 UNet、SPADEGenerator
         image_size=model_opt['diffusion']['image_size'],
         channels=model_opt['diffusion']['channels'],
         loss_type='l2',  # L1 or L2
