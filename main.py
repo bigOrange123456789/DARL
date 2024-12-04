@@ -36,15 +36,17 @@ if __name__ == "__main__":
     # opt： OrderedDict([('name', 'DARM_train'), ('phase', 'train'), ('gpu_ids', [1]), ...
     # Convert to NoneDict, which return None for missing key. # 转换为NoneDict，如果缺少密钥，则返回None。
     opt = Logger.dict_to_nonedict(opt)
-    visualizer = Visualizer(opt) # 不知道这个Visualizer的作用
-
+    visualizer = Visualizer(opt) # 感觉这个Visualizer的作用可能是用于可视化显示
+    
     # logging
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
 
     Logger.setup_logger(None, opt['path']['log'], 'train', level=logging.INFO, screen=True)
     logger = logging.getLogger('base')
-    logger.info(Logger.dict2str(opt))
+    if False: #是否输出所有配置参数
+        logger.info(Logger.dict2str(opt))
+    else: print('[main.py]--不输出配置参数')
     tb_logger = SummaryWriter(log_dir=opt['path']['tb_logger'])
 
     batchSize = opt['datasets']['train']['batch_size']

@@ -9,18 +9,21 @@ from . import html
 import scipy.ndimage as ndimage
 
 
-class Visualizer():
+class Visualizer(): #可视化工具
     def __init__(self, opt):
         # self.opt = opt
         self.display_id = 1
+        self.display_id = 0 #lzc 这里的值为1的时候会报错
         self.use_html = True
         self.win_size = 160
         self.name = opt['name']
         self.opt = opt
         self.saved = False
+        print('lzc--self.display_id:',self.display_id)
         if self.display_id > 0:
             import visdom
             self.vis = visdom.Visdom(port=opt['display_port'])
+        # os._exit(0)
 
         if self.use_html:
             self.web_dir = opt['path']['checkpoint']

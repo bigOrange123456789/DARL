@@ -15,9 +15,9 @@ class DARM(BaseModel):
         super(DARM, self).__init__(opt)
         # define network and load pretrained models
         self.netG = self.set_device(networks.define_G(opt)) #生成器
-        print('lzc--networks.define_G(opt):',networks.define_G(opt))
+        # print('lzc--networks.define_G(opt):',networks.define_G(opt))
         self.netD_s = self.set_device(networks.define_D(opt)) #分割图判别器 segmentation
-        print('lzc--networks.define_D(opt):',networks.define_D(opt))
+        # print('lzc--networks.define_D(opt):',networks.define_D(opt))
         self.netD_a = self.set_device(networks.define_D(opt)) #造影图判别器 angiography
         self.schedule_phase = None
         self.centered = opt['datasets']['train']['centered'] # true 不知道这里的作用
@@ -178,7 +178,10 @@ class DARM(BaseModel):
 
         logger.info(
             'Network structure: {}, with parameters: {:,d}'.format(net_struc_str, n))
-        logger.info(s)
+        if False:
+            logger.info(s)
+        else:
+            logger.info('[model.py]--不输出网络结构')
 
     def save_network(self, epoch, iter_step, seg_save=False, dice=0):
         if not seg_save:
