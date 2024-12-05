@@ -49,17 +49,17 @@ if __name__ == "__main__":
     else: print('[main.py]--控制台不输出配置参数')
     tb_logger = SummaryWriter(log_dir=opt['path']['tb_logger'])
 
-    batchSize = opt['datasets']['train']['batch_size']
+    batchSize = opt['datasets']['train']['batch_size'] # batch_size=1
+    print("batchSize:",batchSize)
     # dataset
     for phase, dataset_opt in opt['datasets'].items():
         if phase == 'train':
-            train_set = Data.create_dataset_xcad(dataset_opt, phase)
+            train_set = Data.create_dataset_xcad(dataset_opt, phase) #train_set.data_len=2
             train_loader = Data.create_dataloader(train_set, dataset_opt, phase)
-            print('(lzc-main.py) train_loader:',train_loader)
-            training_iters = int(ceil(train_set.data_len / float(batchSize)))
-            val_set = Data.create_dataset_xcad(dataset_opt, 'val')
+            training_iters = int(ceil(train_set.data_len / float(batchSize))) # training_iters=2
+            val_set = Data.create_dataset_xcad(dataset_opt, 'val') # val_set.data_len=2
             val_loader = Data.create_dataloader(val_set, dataset_opt, 'val')
-            valid_iters = int(ceil(val_set.data_len / float(batchSize)))
+            valid_iters = int(ceil(val_set.data_len / float(batchSize))) # valid_iters=2
         elif phase == 'test':
             val_set = Data.create_dataset_xcad(dataset_opt, 'test')
             val_loader = Data.create_dataloader(val_set, dataset_opt, phase)
@@ -84,7 +84,15 @@ if __name__ == "__main__":
         while current_epoch < n_epoch:
             current_epoch += 1
             for istep, train_data in enumerate(train_loader):
-                # print('current_epoch,istep, train_data:',current_epoch,istep, train_data)
+                # print('(lzc) istep, train_data:', istep, train_data)
+                '''
+                istep:1, 
+                train_data:  {
+                    'A': tensor([[[[-0.6627, ...), 
+                    'B': tensor([[[[-0.6941, ...), 
+                    'F': tensor([[[[-1.0000, ...), 
+                    'P': ['./data/Dataset_XCAD/train\\trainC\\003_PPA_-29_PSA_29_2.png'], 'Index': tensor([1])}
+                '''
                 iter_start_time = time.time()
                 current_step += 1
                 diffusion.feed_data(train_data)
@@ -109,6 +117,8 @@ if __name__ == "__main__":
                 diffusion.save_network(current_epoch, current_step)
 
             dice_per_case_score = 0
+            # print("val_loader:",val_loader)
+            # print('enumerate(val_loader)',enumerate(val_loader))
             for idata, val_data in enumerate(val_loader):
                 diffusion.feed_data(val_data)
                 diffusion.test_segment()
