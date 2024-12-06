@@ -68,17 +68,21 @@ class DARM(BaseModel):
         loss_D.backward()
         return loss_D
 
-    def optimize_parameters(self):
+    def optimize_parameters(self): # 优化参数
         h_alpha = 0.2
         h_beta = 5.0
         self.optG.zero_grad()
-        output, [l_dif, l_cyc] = self.netG(self.data)
+        #self.netG(self.data)# 
+        output, [l_dif, l_cyc] = self.netG(self.data) # 扩散损失、循环损失 # 这里执行的是diffusion_seg.py中的forword 
+        # print('lzc-model.py:为了测试，这里注释了许多代码。')
+        # return
 
-        self.A_noisy, self.A_latent, self.B_noisy, self.B_latent, self.segm_V, self.synt_A, self.recn_F = output
+        self.A_noisy, self.A_latent, self.B_noisy, self.B_latent, self.segm_V, self.synt_A, self.recn_F = output 
+        #[ 加噪显影图，   显影图噪声，   加噪背景图，   背景图噪声，  造影图的分割， 合成显影图，  合成图的分割  ]    
         l_cyc = l_cyc * h_beta
-        l_adv_Gs = self.netG.loss_gan(self.netD_s(self.segm_V), True) * h_alpha
-        l_adv_Ga = self.netG.loss_gan(self.netD_a(self.synt_A), True) * h_alpha
-        l_tot = l_dif + l_cyc + l_adv_Gs + l_adv_Ga
+        l_adv_Gs = self.netG.loss_gan(self.netD_s(self.segm_V), True) * h_alpha # 分割图的对抗损失
+        l_adv_Ga = self.netG.loss_gan(self.netD_a(self.synt_A), True) * h_alpha # 合成图的对抗损失
+        l_tot = l_dif + l_cyc + l_adv_Gs + l_adv_Ga # 扩散损失 + 循环损失 + 分割对抗损失 + 合成对抗损失
         l_tot.backward()
         self.optG.step()
 

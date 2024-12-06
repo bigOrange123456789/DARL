@@ -222,12 +222,12 @@ class UNet(nn.Module):
 
         self.final_conv = Block(pre_channel, default(out_channel, in_channel))
 
-    def forward(self, x, time):
-        t = self.time_mlp(time) if exists(self.time_mlp) else None
+    def forward(self, x, time): # 加噪图片、加噪步数
+        t = self.time_mlp(time) if exists(self.time_mlp) else None # 步数嵌入
 
         feats = []
         for layer in self.downs:
-            if isinstance(layer, ResnetBlocWithAttn):
+            if isinstance(layer, ResnetBlocWithAttn): # ResnetBlocWithAttn指的是含注意力层的Resnet块？
                 x = layer(x, t)
             else:
                 x = layer(x)

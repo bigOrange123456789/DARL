@@ -267,7 +267,7 @@ class GaussianDiffusion(nn.Module):
         t_a = torch.randint(0, 200, (b,), device=device).long() #生成b个0~200之间的随机整数 t_a = tensor([129]) #加噪步数
         A_noisy = self.q_sample(x_start=a_start, t=t_a, noise=noise) #加噪后的图片   [1, 1, 256, 256] 
         A_latent = self.denoise_fn(A_noisy, t_a) #所含的噪声   [1, 1, 256, 256]
-        segm_V = self.segment_fn(torch.cat([A_noisy, A_latent], dim=1)) #分割结果
+        segm_V = self.segment_fn(torch.cat([A_noisy, A_latent], dim=1)) #造影图的分割结果
 
         #### B path #### 论文中的B合成路径
         t_b = torch.randint(0, self.num_timesteps, (b,), device=device).long() #加噪步数
@@ -297,18 +297,45 @@ class GaussianDiffusion(nn.Module):
         # print('torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long)',torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long))
         # fractal = torch.eye(2)[:, torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long)].transpose(0, 1)
         fractal = torch.eye(2).to(device)[:, torch.clamp_min(x_in['F'][:, 0], 0).type(torch.long)].transpose(0, 1) #用于确保整体几何信息的分形图
+        # [1, 2, 256, 256] # print('fractal',fractal.device,fractal.shape,type(fractal))
         # 整句代码的作用是：生成一个2x2的单位矩阵，然后根据x_in['F']张量的第一列中的值（经过限制不小于0并转换为长整型）来选择单位矩阵的列，最后将得到的矩阵进行转置。这样的操作可能用于某些特定的矩阵操作或数据预处理步骤。
         synt_A = self.segment_fn(torch.cat([B_noisy, B_latent], dim=1), fractal.to(device)) #合成的造影图
+        # [1, 1, 256, 256] # print('synt_A',synt_A.device,synt_A.shape,type(synt_A))
+        # return
 
         #### Cycle path ####
         f_noisy = self.q_sample(x_start=synt_A, t=t_a, noise=noise) #在合成图中添加噪声
+        # [1, 1, 256, 256] # print('f_noisy',f_noisy.device,f_noisy.shape,type(f_noisy))
+        # print('t_a',t_a.shape,type(t_a),t_a)
+        # print('f_noisy',f_noisy.shape,type(f_noisy),f_noisy)
         f_recon = self.denoise_fn(f_noisy, t_a) #所含的噪声
-        recn_F = self.segment_fn(torch.cat([f_noisy, f_recon], dim=1)) #分割结果
+        '''
+            f_noisy # 加噪的合成图
+                torch.Size([1, 1, 256, 256]) 
+                <class 'torch.Tensor'> 
+                tensor([[[[...]]]],device='cuda:0', grad_fn=<AddBackward0>)
+            t_a     # 加噪步数为107
+                torch.Size([1]) 
+                <class 'torch.Tensor'> 
+                tensor([107], device='cuda:0')
+        '''
+        # print('lzc-diffusion_seg.py p_losses():为了测试，这里注释了许多代码。')
+        # return
+        # [1, 1, 256, 256] # print('f_recon',f_recon.device,f_recon.shape,type(f_recon))
+        recn_F = self.segment_fn(torch.cat([f_noisy, f_recon], dim=1)) #合成图的分割结果
+        # [1, 1, 256, 256] # print('recn_F',recn_F.device,recn_F.shape,type(recn_F))
 
         l_dif = self.loss_func(noise, B_latent) # 真实噪声 和 预测噪声 之间的差异
+        # print('l_dif',l_dif.device,l_dif.shape,type(l_dif),l_dif)
         l_dif = l_dif.sum() / int(b * c * h * w)
-        l_cyc = self.loss_cyc(recn_F, x_in['F']) #分割结果 和 分形标签 之间的差异 
-
+        # print('l_dif',l_dif.device,l_dif.shape,type(l_dif),l_dif)
+        l_cyc = self.loss_cyc(recn_F, x_in['F']) # 分割结果 和 分形标签 之间的差异 
+        # print('l_cyc',l_cyc.device,l_cyc.shape,type(l_cyc),l_cyc)
+        '''
+            l_dif: cuda:0 torch.Size([]) tensor(88027.5469, device='cuda:0', grad_fn=<MseLossBackward0>)
+            l_dif: cuda:0 torch.Size([]) tensor(1.3432, device='cuda:0', grad_fn=<DivBackward0>)
+            l_cyc: cuda:0 torch.Size([]) tensor(0.8366, device='cuda:0', grad_fn=<MeanBackward0>)
+        '''
         return [A_noisy, A_latent, B_noisy, B_latent, segm_V, synt_A, recn_F], [l_dif, l_cyc]
 
     def forward(self, x, *args, **kwargs):
@@ -328,6 +355,6 @@ class GaussianDiffusion(nn.Module):
             args: ()
             kwargs: {}
         '''
-        # print(1)
+        # print('lzc-tag.diffusion_seg.py.forword')
         return self.p_losses(x, *args, **kwargs)
 

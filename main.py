@@ -96,15 +96,17 @@ if __name__ == "__main__":
                 iter_start_time = time.time()
                 current_step += 1
                 diffusion.feed_data(train_data)
-                diffusion.optimize_parameters()
+                diffusion.optimize_parameters() # 更新参数
                 # log
                 if (istep+1) % opt['train']['print_freq'] == 0:
                     logs = diffusion.get_current_log()
                     t = (time.time() - iter_start_time) / batchSize
                     visualizer.print_current_errors(current_epoch, istep+1, training_iters, logs, t, 'Train')
                     visualizer.plot_current_errors(current_epoch, (istep+1) / float(training_iters), logs)
+                    # '''
                     visuals = diffusion.get_current_visuals()
-                    visualizer.display_current_results(visuals, current_epoch, True)
+                    visualizer.display_current_results(visuals, current_epoch, True) 
+                    # '''          
 
                 # validation
                 if (current_step+1) % opt['train']['val_freq'] == 0:
