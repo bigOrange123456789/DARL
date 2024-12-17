@@ -15,7 +15,6 @@
     "datasets": {
         "train": {
             "name": "XCAD",
-            "dataroot-old2": "../DataSet2/XCAD/",
             "dataroot": "./data/Dataset_XCAD/",
             "batch_size": 1,
             "centered": true,
@@ -24,7 +23,6 @@
         },
         "val": {
             "name": "XCAD",
-            "dataroot-old2": "../DataSet2/XCAD/",
             "dataroot": "./data/Dataset_XCAD/",
             "data_len": 3
         }
@@ -48,18 +46,18 @@
                 16
             ],
             "res_blocks": 2,
-            "dropout": 0 
+            "dropout": 0
         },
         "beta_schedule": {
             "train": {
                 "schedule": "linear",
-                "n_timestep": 2000,
+                "n_timestep": 500,
                 "linear_start": 1e-6,
                 "linear_end": 1e-2
             },
             "val": {
                 "schedule": "linear",
-                "n_timestep": 2000,
+                "n_timestep": 500,
                 "linear_start": 1e-6,
                 "linear_end": 1e-2
             }
@@ -71,7 +69,7 @@
         }
     },
     "train": {
-        "n_epoch": 150,
+        "n_epoch": 15,
         "val_freq": 5,
         "save_checkpoint_epoch": 100,
         "print_freq": 1,

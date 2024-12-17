@@ -9,21 +9,19 @@ from . import html
 import scipy.ndimage as ndimage
 
 
-class Visualizer(): #可视化工具
+class Visualizer():
     def __init__(self, opt):
         # self.opt = opt
         self.display_id = 1
-        self.display_id = 0 #lzc 这里的值为1的时候会报错
+        self.display_id = 0  # lzc 这里的值为1的时候会报错
         self.use_html = True
         self.win_size = 160
         self.name = opt['name']
         self.opt = opt
         self.saved = False
-        print('lzc--self.display_id:',self.display_id)
         if self.display_id > 0:
             import visdom
             self.vis = visdom.Visdom(port=opt['display_port'])
-        # os._exit(0)
 
         if self.use_html:
             self.web_dir = opt['path']['checkpoint']
@@ -109,7 +107,7 @@ class Visualizer(): #可视化工具
             self.plot_data = {'X': [], 'Y': [], 'legend': list(errors.keys())}
         self.plot_data['X'].append(epoch + counter_ratio)
         self.plot_data['Y'].append([errors[k] for k in self.plot_data['legend']])
-        if self.display_id > 0:#lzc--更新后vis这个属性将不再存在
+        if self.display_id > 0:  # lzc--更新后vis这个属性将不再存在
             self.vis.line(
                 X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
                 Y=np.array(self.plot_data['Y']),

@@ -26,11 +26,11 @@ class BaseModel():
     def print_network(self):
         pass
 
-    def set_device(self, x): #将自己或内部所有成员设置为device
+    def set_device(self, x):
         if isinstance(x, dict):
-            for key, item in x.items(): # 遍历
+            for key, item in x.items():
                 if item is not None and not isinstance(item, list):
-                    x[key] = item.to(self.device) #将内部所有成员设置为GPU
+                    x[key] = item.to(self.device)
         elif isinstance(x, list):
             for item in x:
                 if item is not None:

@@ -222,12 +222,12 @@ class UNet(nn.Module):
 
         self.final_conv = Block(pre_channel, default(out_channel, in_channel))
 
-    def forward(self, x, time): # 加噪图片、加噪步数
-        t = self.time_mlp(time) if exists(self.time_mlp) else None # 步数嵌入
+    def forward(self, x, time):
+        t = self.time_mlp(time) if exists(self.time_mlp) else None
 
         feats = []
         for layer in self.downs:
-            if isinstance(layer, ResnetBlocWithAttn): # ResnetBlocWithAttn指的是含注意力层的Resnet块？
+            if isinstance(layer, ResnetBlocWithAttn):
                 x = layer(x, t)
             else:
                 x = layer(x)
@@ -238,35 +238,6 @@ class UNet(nn.Module):
                 x = layer(x, t)
             else:
                 x = layer(x)
-
-        for layer in self.ups:
-            if isinstance(layer, ResnetBlocWithAttn):
-
-                x = layer(torch.cat((x, feats.pop()), dim=1), t)
-            else:
-                x = layer(x)
-        recon = self.final_conv(x)
-        return recon
-    def forward_lzc(self, x, time): # 加噪图片、加噪步数
-        # return
-        t = self.time_mlp(time) if exists(self.time_mlp) else None # 步数嵌入
-
-        feats = []
-        # return
-        for layer in self.downs:
-            if isinstance(layer, ResnetBlocWithAttn): # ResnetBlocWithAttn指的是含注意力层的Resnet块？
-                x = layer(x, t)
-            else:
-                x = layer(x)
-            feats.append(x)
-        return
-
-        for layer in self.mid:
-            if isinstance(layer, ResnetBlocWithAttn):
-                x = layer(x, t)
-            else:
-                x = layer(x)
-        return
 
         for layer in self.ups:
             if isinstance(layer, ResnetBlocWithAttn):

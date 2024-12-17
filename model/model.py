@@ -14,15 +14,13 @@ class DARM(BaseModel):
     def __init__(self, opt):
         super(DARM, self).__init__(opt)
         # define network and load pretrained models
-        self.netG = self.set_device(networks.define_G(opt)) #生成器
-        # print('lzc--networks.define_G(opt):',networks.define_G(opt))
-        self.netD_s = self.set_device(networks.define_D(opt)) #分割图判别器 segmentation
-        # print('lzc--networks.define_D(opt):',networks.define_D(opt))
-        self.netD_a = self.set_device(networks.define_D(opt)) #造影图判别器 angiography
+        self.netG = self.set_device(networks.define_G(opt))
+        self.netD_s = self.set_device(networks.define_D(opt))
+        self.netD_a = self.set_device(networks.define_D(opt))
         self.schedule_phase = None
-        self.centered = opt['datasets']['train']['centered'] # true 不知道这里的作用
+        self.centered = opt['datasets']['train']['centered']
 
-        # set loss and load resume state 设置损失和负载恢复状态
+        # set loss and load resume state
         self.set_loss()
         self.set_new_noise_schedule(opt['model']['beta_schedule']['train'], schedule_phase='train')
         self.load_network()
@@ -68,20 +66,17 @@ class DARM(BaseModel):
         loss_D.backward()
         return loss_D
 
-    def optimize_parameters(self): # 优化参数
+    def optimize_parameters(self):
         h_alpha = 0.2
         h_beta = 5.0
         self.optG.zero_grad()
-        self.netG(self.data) # output, [l_dif, l_cyc] = self.netG(self.data) # 扩散损失、循环损失 # 这里执行的是diffusion_seg.py中的forword 
-        print('lzc-model.py:为了测试，这里注释了许多代码。')
-        return
+        output, [l_dif, l_cyc] = self.netG(self.data)
 
-        self.A_noisy, self.A_latent, self.B_noisy, self.B_latent, self.segm_V, self.synt_A, self.recn_F = output 
-        #[ 加噪显影图，   显影图噪声，   加噪背景图，   背景图噪声，  造影图的分割， 合成显影图，  合成图的分割  ]    
+        self.A_noisy, self.A_latent, self.B_noisy, self.B_latent, self.segm_V, self.synt_A, self.recn_F = output
         l_cyc = l_cyc * h_beta
-        l_adv_Gs = self.netG.loss_gan(self.netD_s(self.segm_V), True) * h_alpha # 分割图的对抗损失
-        l_adv_Ga = self.netG.loss_gan(self.netD_a(self.synt_A), True) * h_alpha # 合成图的对抗损失
-        l_tot = l_dif + l_cyc + l_adv_Gs + l_adv_Ga # 扩散损失 + 循环损失 + 分割对抗损失 + 合成对抗损失
+        l_adv_Gs = self.netG.loss_gan(self.netD_s(self.segm_V), True) * h_alpha
+        l_adv_Ga = self.netG.loss_gan(self.netD_a(self.synt_A), True) * h_alpha
+        l_tot = l_dif + l_cyc + l_adv_Gs + l_adv_Ga
         l_tot.backward()
         self.optG.step()
 
@@ -181,6 +176,7 @@ class DARM(BaseModel):
 
         logger.info(
             'Network structure: {}, with parameters: {:,d}'.format(net_struc_str, n))
+        # logger.info(s)
         if False:
             logger.info(s)
         else:

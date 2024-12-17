@@ -16,50 +16,44 @@ def save_image(image_numpy, image_path):
     image_pil = Image.fromarray(image_numpy.astype('uint8'))
     image_pil.save(image_path)
 
-# lzc: python3 main.py -p train -c config/train.json
 if __name__ == "__main__":
-    print('(lzc-main.py) torch.cuda.is_available()--main',torch.cuda.is_available())
+    print('(lzc-main.py) torch.cuda.is_available()--main', torch.cuda.is_available())
     parser = argparse.ArgumentParser()
-    # 获取参数
     parser.add_argument('-c', '--config', type=str, default='config/test.json', help='JSON file for configuration')
-    # 设定json文件路径
     parser.add_argument('-p', '--phase', type=str, choices=['train', 'test'],
                         help='Run either train(training) or test(inference)', default='train')
-    # 选择训练模式
     parser.add_argument('-gpu', '--gpu_ids', type=str, default=None)
     parser.add_argument('-debug', '-d', action='store_true')
 
     # parse configs
     args = parser.parse_args()
-    # 解析参数
     opt = Logger.parse(args)
-    # opt： OrderedDict([('name', 'DARM_train'), ('phase', 'train'), ('gpu_ids', [1]), ...
-    # Convert to NoneDict, which return None for missing key. # 转换为NoneDict，如果缺少密钥，则返回None。
+    # Convert to NoneDict, which return None for missing key.
     opt = Logger.dict_to_nonedict(opt)
-    visualizer = Visualizer(opt) # 感觉这个Visualizer的作用可能是用于可视化显示
-    
+    visualizer = Visualizer(opt)
+
     # logging
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
 
     Logger.setup_logger(None, opt['path']['log'], 'train', level=logging.INFO, screen=True)
     logger = logging.getLogger('base')
+    # logger.info(Logger.dict2str(opt))
     if False: #是否输出所有配置参数
         logger.info(Logger.dict2str(opt))
     else: print('[main.py]--控制台不输出配置参数')
     tb_logger = SummaryWriter(log_dir=opt['path']['tb_logger'])
 
-    batchSize = opt['datasets']['train']['batch_size'] # batch_size=1
-    print("batchSize:",batchSize)
+    batchSize = opt['datasets']['train']['batch_size']
     # dataset
     for phase, dataset_opt in opt['datasets'].items():
         if phase == 'train':
-            train_set = Data.create_dataset_xcad(dataset_opt, phase) #train_set.data_len=2
+            train_set = Data.create_dataset_xcad(dataset_opt, phase)
             train_loader = Data.create_dataloader(train_set, dataset_opt, phase)
-            training_iters = int(ceil(train_set.data_len / float(batchSize))) # training_iters=2
-            val_set = Data.create_dataset_xcad(dataset_opt, 'val') # val_set.data_len=2
+            training_iters = int(ceil(train_set.data_len / float(batchSize)))
+            val_set = Data.create_dataset_xcad(dataset_opt, 'val')
             val_loader = Data.create_dataloader(val_set, dataset_opt, 'val')
-            valid_iters = int(ceil(val_set.data_len / float(batchSize))) # valid_iters=2
+            valid_iters = int(ceil(val_set.data_len / float(batchSize)))
         elif phase == 'test':
             val_set = Data.create_dataset_xcad(dataset_opt, 'test')
             val_loader = Data.create_dataloader(val_set, dataset_opt, phase)
@@ -84,31 +78,18 @@ if __name__ == "__main__":
         while current_epoch < n_epoch:
             current_epoch += 1
             for istep, train_data in enumerate(train_loader):
-                # print('(lzc) istep, train_data:', istep, train_data)
-                '''
-                istep:1, 
-                train_data:  {
-                    'A': tensor([[[[-0.6627, ...), 
-                    'B': tensor([[[[-0.6941, ...), 
-                    'F': tensor([[[[-1.0000, ...), 
-                    'P': ['./data/Dataset_XCAD/train\\trainC\\003_PPA_-29_PSA_29_2.png'], 
-                    'Index': tensor([1])
-                }
-                '''
                 iter_start_time = time.time()
                 current_step += 1
                 diffusion.feed_data(train_data)
-                diffusion.optimize_parameters() # 更新参数
+                diffusion.optimize_parameters()
                 # log
                 if (istep+1) % opt['train']['print_freq'] == 0:
                     logs = diffusion.get_current_log()
                     t = (time.time() - iter_start_time) / batchSize
                     visualizer.print_current_errors(current_epoch, istep+1, training_iters, logs, t, 'Train')
                     visualizer.plot_current_errors(current_epoch, (istep+1) / float(training_iters), logs)
-                    '''
                     visuals = diffusion.get_current_visuals()
-                    visualizer.display_current_results(visuals, current_epoch, True) 
-                    '''          
+                    visualizer.display_current_results(visuals, current_epoch, True)
 
                 # validation
                 if (current_step+1) % opt['train']['val_freq'] == 0:
@@ -116,16 +97,11 @@ if __name__ == "__main__":
                     visuals = diffusion.get_current_visuals(isTrain=False)
                     visualizer.display_current_results(visuals, current_epoch, True)
 
-            print('current_epoch:',current_epoch)
             if current_epoch % opt['train']['save_checkpoint_epoch'] == 0:
                 logger.info('Saving models and training states.')
                 diffusion.save_network(current_epoch, current_step)
 
             dice_per_case_score = 0
-            print("val_loader:",val_loader)
-            print('enumerate(val_loader)',enumerate(val_loader))
-            # for i in enumerate(val_loader):
-                # print(i)
             for idata, val_data in enumerate(val_loader):
                 diffusion.feed_data(val_data)
                 diffusion.test_segment()
