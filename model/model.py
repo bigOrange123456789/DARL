@@ -72,10 +72,9 @@ class DARM(BaseModel):
         h_alpha = 0.2
         h_beta = 5.0
         self.optG.zero_grad()
-        #self.netG(self.data)# 
-        output, [l_dif, l_cyc] = self.netG(self.data) # 扩散损失、循环损失 # 这里执行的是diffusion_seg.py中的forword 
-        # print('lzc-model.py:为了测试，这里注释了许多代码。')
-        # return
+        self.netG(self.data) # output, [l_dif, l_cyc] = self.netG(self.data) # 扩散损失、循环损失 # 这里执行的是diffusion_seg.py中的forword 
+        print('lzc-model.py:为了测试，这里注释了许多代码。')
+        return
 
         self.A_noisy, self.A_latent, self.B_noisy, self.B_latent, self.segm_V, self.synt_A, self.recn_F = output 
         #[ 加噪显影图，   显影图噪声，   加噪背景图，   背景图噪声，  造影图的分割， 合成显影图，  合成图的分割  ]    

@@ -91,7 +91,9 @@ if __name__ == "__main__":
                     'A': tensor([[[[-0.6627, ...), 
                     'B': tensor([[[[-0.6941, ...), 
                     'F': tensor([[[[-1.0000, ...), 
-                    'P': ['./data/Dataset_XCAD/train\\trainC\\003_PPA_-29_PSA_29_2.png'], 'Index': tensor([1])}
+                    'P': ['./data/Dataset_XCAD/train\\trainC\\003_PPA_-29_PSA_29_2.png'], 
+                    'Index': tensor([1])
+                }
                 '''
                 iter_start_time = time.time()
                 current_step += 1
@@ -103,10 +105,10 @@ if __name__ == "__main__":
                     t = (time.time() - iter_start_time) / batchSize
                     visualizer.print_current_errors(current_epoch, istep+1, training_iters, logs, t, 'Train')
                     visualizer.plot_current_errors(current_epoch, (istep+1) / float(training_iters), logs)
-                    # '''
+                    '''
                     visuals = diffusion.get_current_visuals()
                     visualizer.display_current_results(visuals, current_epoch, True) 
-                    # '''          
+                    '''          
 
                 # validation
                 if (current_step+1) % opt['train']['val_freq'] == 0:
@@ -114,13 +116,16 @@ if __name__ == "__main__":
                     visuals = diffusion.get_current_visuals(isTrain=False)
                     visualizer.display_current_results(visuals, current_epoch, True)
 
+            print('current_epoch:',current_epoch)
             if current_epoch % opt['train']['save_checkpoint_epoch'] == 0:
                 logger.info('Saving models and training states.')
                 diffusion.save_network(current_epoch, current_step)
 
             dice_per_case_score = 0
-            # print("val_loader:",val_loader)
-            # print('enumerate(val_loader)',enumerate(val_loader))
+            print("val_loader:",val_loader)
+            print('enumerate(val_loader)',enumerate(val_loader))
+            # for i in enumerate(val_loader):
+                # print(i)
             for idata, val_data in enumerate(val_loader):
                 diffusion.feed_data(val_data)
                 diffusion.test_segment()

@@ -308,7 +308,10 @@ class GaussianDiffusion(nn.Module):
         # [1, 1, 256, 256] # print('f_noisy',f_noisy.device,f_noisy.shape,type(f_noisy))
         # print('t_a',t_a.shape,type(t_a),t_a)
         # print('f_noisy',f_noisy.shape,type(f_noisy),f_noisy)
-        f_recon = self.denoise_fn(f_noisy, t_a) #所含的噪声
+        # return
+        f_recon = self.denoise_fn.forward_lzc(f_noisy, t_a) # self.denoise_fn(f_noisy, t_a) #所含的噪声
+        print('lzc-diffusion_seg.py 313:为了测试，这里注释了许多代码。')
+        return
         '''
             f_noisy # 加噪的合成图
                 torch.Size([1, 1, 256, 256]) 
