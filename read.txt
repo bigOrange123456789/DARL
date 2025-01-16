@@ -1,0 +1,5 @@
+'''
+export PATH="~/anaconda3/bin:$PATH"
+source activate darl
+python main.py -p train -c config/train.json
+'''
